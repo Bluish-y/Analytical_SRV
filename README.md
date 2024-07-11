@@ -38,7 +38,7 @@ python compare.py
 
 The script performs the following steps:
 
-- Generates random probability distributions `p` and `q` using a Dirichlet distribution.
+- Generates random probability distributions `ps` and `qs` using a Dirichlet distribution.
 - Computes the SRVs using both the analytical and numerical approaches.
 - Calculates the mutual information for the SRVs.
 - Plots the results in two formats: boxplots and bar charts.
