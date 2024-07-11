@@ -61,8 +61,8 @@ Computes the analytical SRV given input probability distributions `ps` and `qs`.
 - `ps`: Probability distribution for the random variable X1.
 - `qs`: Probability distribution for the random variable X2.
 - `do_it`: Flag to control impurity correction. This runs the algorithm such that it produces an analytical SRV, and if the SRV has probabilities that are negative, it makes those negative values zero. The idea here is to find an SRV which might not be 100% synergistic but will definitely describe the probability distributions.
-- `search_it`: Flag to control normalization search. This search performs the impurity correction described above in a loop to converge to an SRV which is 100% synergistic. However, this also reduces the mutual information, so this is just a way to test the closest SRV you can find using impurity correction.
-- `do_and_search`: Flag to control both impurity correction and normalization search.
+- `search_it`: Flag to control normalization search. This decides if you should modify the normalization parameters to increase mutual info while also keeping the SRV a valid probability distribution. By default, it is set to 0.9 for the first elements and 1 for the second elements of the SRV. You can change this from the `norm` parameter.
+- `do_and_search`: Flag to control impurity search. This search performs the impurity correction described above in a loop to converge to an SRV which is 100% synergistic. However, this also reduces the mutual information, so this is just a way to test the closest SRV you can find using impurity correction.
 - `print_it`: Flag to print detailed computation results.
 
 **Returns:** SRV matrix.
