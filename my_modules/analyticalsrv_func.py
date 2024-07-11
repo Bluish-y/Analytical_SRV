@@ -5,6 +5,29 @@ import my_modules.variables as vb
 np.set_printoptions(suppress=True)
 
 def analyticalsrv_test(ps,qs, do_it = 0, search_it = 1, do_and_search=0, print_it = 0):
+    """
+    Compute the analytical synergistic random variables (SRV) given probability distributions ps and qs.
+
+    Parameters:
+    ps : numpy.ndarray
+        Probability distribution for the first input variable.
+    qs : numpy.ndarray
+        Probability distribution for the second input variable.
+    do_it : int, optional (default=0)
+        Flag to decide if an invalid probability distribution should be corrected by making all negative values 0.
+    search_it : int, optional (default=1)
+        Flag to decide if you should modify the normalization parameters to increase mutual info while also keeping the SRV a valid probability distribution.
+        By default, it is set to 0.9 for the first elements and 1 for the second elements of the SRV. You can change this from the `norm` parameter.
+    do_and_search : int, optional (default=0)
+        Flag to decide if the impurity correction should be repeated till a 100% synergistic random variable is found.
+    print_it : int, optional (default=0)
+        Flag to decide if the results should be printed.
+
+    Returns:
+    srv : numpy.ndarray
+        The computed SRVs
+    """
+
     #### derived variables #####
     srv_states = 3
     p_states = ps.shape[0]
@@ -98,6 +121,29 @@ def analyticalsrv_test(ps,qs, do_it = 0, search_it = 1, do_and_search=0, print_i
 # np.save('srv.npy', srv)
 
 def generate_simple_srv(ps,qs,bs, ws, pinv, null_mat, master_mat):
+    """
+    Generate a simple SRV given the inputs and intermediate variables without any optimization algorithms.
+
+    Parameters:
+    ps : numpy.ndarray
+        Probability distribution for the first input variable.
+    qs : numpy.ndarray
+        Probability distribution for the second input variable.
+    bs : list
+        Target marginal distributions.
+    ws : list
+        Weight vectors.
+    pinv : numpy.ndarray
+        Pseudoinverse of the master matrix.
+    null_mat : numpy.ndarray
+        Null matrix derived from the master matrix.
+    master_mat : numpy.ndarray
+        Master matrix combining the input probability distributions.
+
+    Returns:
+    srv : numpy.ndarray
+        The computed SRV
+    """
     srv_states, q_states, p_states = len(bs), len(qs), len(ps)
     prev_sum = 0
     srvs = []
