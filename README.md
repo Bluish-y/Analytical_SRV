@@ -1,4 +1,4 @@
-**Note**: The ps and qs correspond to the rows and columns instead of columns and rows as descriped in the report. This has happened since the definition of the vectorization operator is different in this code. However, all formulas remain same due to this switch.
+**Note**: The ps and qs correspond to the rows and columns instead of columns and rows as descriped in the report. This due to the fact that the definition of the vectorization operator is different in this code. So switching ps and qs like done here reverses the effect and reproduces the results outlined in the report.
 
 # Analytical SRVs
 
