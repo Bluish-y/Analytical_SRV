@@ -1,33 +1,131 @@
 import numpy as np
+import cvxpy as cp
 import warnings
 from my_modules.helpers import *
 import my_modules.variables as vb
 np.set_printoptions(suppress=True)
 
+
+
+def new_analyticalsrv_test(ps,qs, do_it = 0, search_it = 1, do_and_search=0, print_it = 0):
+    flag=True
+    count=0
+    x0 = np.concatenate([np.array([1, 0, 0, 0, 1, 0, 0, 0, 1]), np.array([0, 1, 0, 0, 0, 1, 1, 0, 0]), np.array([0, 0, 1, 1, 0, 0, 0, 1, 0])])
+    while(flag):
+        if count>100:
+            flag=False
+        #### derived variables #####
+        srv_states = 3
+        p_states = ps.shape[0]
+        q_states = qs.shape[0]
+        target_marginal = qs[::-1]
+        bs = np.array([target*np.ones(p_states+q_states) for target in target_marginal])
+
+        #### ----------------- #####
+
+        #### analytically calculated ####
+        master_mat = np.concatenate((np.kron(np.eye(p_states), ps), np.kron(qs, np.eye(q_states))), axis = 0)
+        cols = p_states*q_states
+        master_mat = np.concatenate(((np.pad(master_mat, ((0,0), (0,2*cols)), mode="constant", constant_values = 0)), 
+                                    (np.pad(master_mat, ((0,0), (cols,cols)), mode="constant", constant_values = 0)), 
+                                    (np.pad(master_mat, ((0,0), (2*cols, 0)), mode="constant", constant_values = 0))), axis=0)
+        # master_mat = np.concatenate((master_mat, master_mat, master_mat), axis=1)
+        new_mat = np.kron(np.ones(p_states), np.eye(cols))
+        master_mat = np.concatenate((master_mat, new_mat), axis = 0)
+        
+        # targets = np.concatenate(bs, axis=0)
+        # targets = np.concatenate((targets, np.ones(new_mat.shape[0])))
+        targets = np.ones(master_mat.shape[0])
+
+        # set_vectors = np.array([[0,0,1], [0,0,1], [1,0,0], [1,0,0], [0,1,0]])
+        # indices = np.array([[2,11,20], [4,13,22], [5, 14, 23], [7, 16, 25], [8, 17, 26]])
+        # for i in range(set_vectors.shape[0]):
+        #     for j in range(set_vectors.shape[1]):
+        #         targets = np.append(targets, set_vectors[i,j])
+        #         add = np.zeros((1,master_mat.shape[1]))
+        #         add[0,indices[i,j]] = 1
+        #         master_mat = np.concatenate((master_mat, add), axis=0)
+
+        pinv = np.linalg.pinv(master_mat)
+        null_mat = np.eye(pinv.shape[0]) - np.dot(pinv, master_mat)
+        pinv_nm = null_mat
+        #### ---------------------- ####
+        # targets = np.ones(master_mat.shape[0])
+        # x0 = np.ones(master_mat.shape[1])
+        
+        # x = x0 - np.dot(pinv, (np.dot(master_mat, x0)-targets))
+        # if np.any(x<0) or np.any(x>1):
+        #     x0 = x.reshape(3,9).copy()
+        #     for j in range(x0.shape[1]):
+        #         x0[:,j] -= x0[:,j].min()
+        #         x0[:,j] /= x0[:,j].sum() 
+        #     x0 = x0.reshape(27,)
+        # else:
+        #     flag = False
+        # count+=1
+        # Given numpy arrays:
+        # A (m_a x n), b (m_a,), B (m_b x n), C (m_c x n), x0 (n,)
+        # If a constraint set is absent, use empty matrices with matching width n.
+        flag= False
+        x, b = convex_optim(x0, master_mat, np.eye(x0.size), np.eye(x0.size), ps,qs)
+
+    x = x.reshape(3,9)
+    srv = x.reshape(3,9).T.reshape(3,3,3)
+    return srv
+
+def convex_optim(x0, A, B, C, ps,qs):
+    n = x0.shape[0]
+    x = cp.Variable(n)
+
+    # Scalars b1, b2, b3
+    # b1 = cp.Variable()
+    # b2 = cp.Variable()
+    # b3 = cp.Variable()
+    b = cp.Variable(3)
+
+    # Each block length
+    m = 6
+    ones = np.ones(m)
+
+    constraints = [
+        A @ x == cp.hstack([b[0]*ones, b[1]*ones, b[2]*ones, cp.Constant(np.ones(9))]),
+        b[0] + b[1] + b[2] == 1
+    ]
+    if B.size > 0:
+        constraints.append(B @ x >= 0)
+    if C.size > 0:
+        constraints.append(C @ x <= 1)
+
+
+    objective = cp.Minimize(objective_func(x,ps,qs, b))
+    # objective = cp.Minimize(0.5 * cp.sum_squares(x - x0))
+    prob = cp.Problem(objective, constraints)
+    prob.solve()
+
+    x_star = x.value
+    b_star = b.value
+    return x_star, b_star
+
+def objective_func(x, ps, qs, b):
+    # x comes in flat (length 27)
+    X = cp.reshape(x, (3, 9))
+
+    # Step 2: transpose -> shape (9, 3)
+    X = cp.transpose(X)
+
+    # Step 3: reshape into (3, 3, 3)
+    X = cp.reshape(X, (3, 3, 3))
+
+    total = 0.0
+    for i in range(3):
+        for j in range(3):
+            for k in range(3):
+                total -= X[i, j, k] * ps[i] * qs[j] * cp.log(X[i, j, k] / b[k])
+    return total
+
+
+
 def analyticalsrv_test(ps,qs, do_it = 0, search_it = 1, do_and_search=0, print_it = 0):
-    """
-    Compute the analytical synergistic random variables (SRV) given probability distributions ps and qs.
-
-    Parameters:
-    ps : numpy.ndarray
-        Probability distribution for the first input variable.
-    qs : numpy.ndarray
-        Probability distribution for the second input variable.
-    do_it : int, optional (default=0)
-        Flag to decide if an invalid probability distribution should be corrected by making all negative values 0.
-    search_it : int, optional (default=1)
-        Flag to decide if you should modify the normalization parameters to increase mutual info while also keeping the SRV a valid probability distribution.
-        By default, it is set to 0.9 for the first elements and 1 for the second elements of the SRV. You can change this from the `norm` parameter.
-    do_and_search : int, optional (default=0)
-        Flag to decide if the impurity correction should be repeated till a 100% synergistic random variable is found.
-    print_it : int, optional (default=0)
-        Flag to decide if the results should be printed.
-
-    Returns:
-    srv : numpy.ndarray
-        The computed SRVs
-    """
-
     #### derived variables #####
     srv_states = 3
     p_states = ps.shape[0]
@@ -265,3 +363,7 @@ def cubic_analyticalsrv_test(ps,qs, do_it = 0, search_it = 1, do_and_search=0, p
 
         print("\nSrv:\n",srv, "\n ps, and qs, end_marginal:", repr(ps), ", ", repr(qs), ", ", repr(marginals[0]))
     return srv
+
+if __name__ == '__main__':
+    ps,qs = np.array([0.7,0.2,0.1]), np.array([0.4,0.3,0.3])
+    new_analyticalsrv_test(ps,qs)

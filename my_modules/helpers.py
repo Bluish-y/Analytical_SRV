@@ -111,7 +111,11 @@ def normalize(solution, maxi, prev_sum, p_states, q_states, search = 0):
 
     return solution
 
+<<<<<<< HEAD
 def grad_info(solution, ps,qs, target_marginal, w, pinv, null_mat):
+=======
+def grad_info(solution, ps,qs, target_marginal, w, pinv, null_mat, s3):
+>>>>>>> 9b40086 (Convex optimization to improve synergy values)
     srv_states = len(target_marginal)
     sol_states, p_states, q_states = len(w), len(ps), len(qs)
     b = target_marginal
@@ -119,21 +123,40 @@ def grad_info(solution, ps,qs, target_marginal, w, pinv, null_mat):
     grad_w = np.zeros(sol_states)
     for k in range(0, srv_states):
         s1 = np.copy(solution)
+<<<<<<< HEAD
         lagrange = (np.log(s1) + 1)*np.sum(pinv, axis=1)
         lagrange[abs(lagrange) == np.inf] = 1e4
+=======
+        lagrange = (np.log(s1/s3) + 1)*np.sum(pinv, axis=1)
+        lagrange[abs(lagrange) == np.inf] = -1e4
+>>>>>>> 9b40086 (Convex optimization to improve synergy values)
         sum=0
         for i in range(0, q_states):
             for j in range(0,p_states):
                 sum += qs[i]*ps[j]*lagrange[3*i+j]
+<<<<<<< HEAD
         grad_b[k] = -1-np.log(b[k]) + sum
     for k in range(0, sol_states):
         lagrange = (np.log(s1) + 1)*null_mat[:,k]
         lagrange[abs(lagrange) == np.inf] = 1e4
+=======
+        grad_b[k] = -1-np.log(b[k]/b[2]) + sum
+    for k in range(0, sol_states):
+        lagrange = (np.log(s1/s3) + 1)*null_mat[:,k]
+        lagrange[abs(lagrange) == np.inf] = -1e4
+>>>>>>> 9b40086 (Convex optimization to improve synergy values)
         sum = 0
         for i in range(0, q_states):
             for j in range(0,p_states):
                 sum += qs[i]*ps[j]*lagrange[3*i+j]
         grad_w[k] = sum
+<<<<<<< HEAD
+=======
+    grad_b[grad_b == np.inf] = 1e4
+    grad_b[grad_b == -np.inf] = -1e4
+    grad_w[grad_w == np.inf] = 1e4
+    grad_w[grad_w == -np.inf] = -1e4
+>>>>>>> 9b40086 (Convex optimization to improve synergy values)
 
     grad = np.concatenate((grad_b, grad_w))
     norm = np.linalg.norm(grad)
