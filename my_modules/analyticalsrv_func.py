@@ -70,6 +70,7 @@ def new_analyticalsrv_test(ps,qs, do_it = 0, search_it = 1, do_and_search=0, pri
         x, b = convex_optim(x0, master_mat, np.eye(x0.size), np.eye(x0.size), ps,qs)
 
     x = x.reshape(3,9)
+    x = np.clip(x,0,1)
     srv = x.reshape(3,9).T.reshape(3,3,3)
     return srv
 
@@ -97,8 +98,8 @@ def convex_optim(x0, A, B, C, ps,qs):
         constraints.append(C @ x <= 1)
 
 
-    objective = cp.Minimize(objective_func(x,ps,qs, b))
-    # objective = cp.Minimize(0.5 * cp.sum_squares(x - x0))
+    # objective = cp.Minimize(objective_func(x,ps,qs, b))
+    objective = cp.Minimize(0.5 * cp.sum_squares(x - x0))
     prob = cp.Problem(objective, constraints)
     prob.solve()
 

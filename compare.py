@@ -4,7 +4,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from sympy import sympify
 
-nsims = 100
+nsims = 50
 ISXs_direct = np.zeros(nsims)
 ISXis_direct = np.zeros(nsims)
 ISXs_analytical = np.zeros(nsims)
